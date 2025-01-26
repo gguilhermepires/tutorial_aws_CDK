@@ -1,0 +1,22 @@
+version = 0.1
+
+[default]
+[default.build]
+# Diretório onde o código é empacotado
+build_dir = "build"
+
+[default.deploy]
+# Nome do stack do CloudFormation
+stack_name = "MyLambdaStack"
+# Região do AWS
+region = "us-east-1"
+# S3 bucket onde os artefatos de implantação serão armazenados
+s3_bucket = "my-sam-deployment-bucket"
+# Prefixo para os artefatos S3
+s3_prefix = "sam-artifacts"
+# Caminho do template SAM
+capabilities = "CAPABILITY_IAM"
+
+[default.local]
+# URL para o DynamoDB local (se estiver usando o DynamoDB Local)
+dynamodb_endpoint = "http://localhost:8000"

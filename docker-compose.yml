@@ -1,0 +1,13 @@
+version: "3.8"
+services:
+  localstack:
+    image: localstack/localstack
+    container_name: localstack
+    ports:
+      - "4566:4566"  # Porta para o LocalStack
+      - "4571:4571"  # Porta para o Lambda (opcional)
+    environment:
+      - SERVICES=lambda,apigateway,dynamodb
+      - LAMBDA_EXECUTOR=docker
+    volumes:
+      - "./localstack-data:/var/lib/localstack"

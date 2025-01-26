@@ -1,0 +1,87 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Aplicação SAM com Lambda, DynamoDB e API Gateway sem autenticação
+
+Globals:
+  Function:
+    Environment:
+      Variables:
+        TABLE_NAME: User
+        AWS_REGION: us-east-1
+        DYNAMODB_ENDPOINT: http://host.docker.internal:8000
+
+Resources:
+  # Tabela DynamoDB
+  UserTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: User
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+      TimeToLiveSpecification: # Habilita TTL (opcional)
+        Enabled: true
+        AttributeName: deletedAt
+        
+  # Função Lambda para Obter Usuário
+  GetUserFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: ./dist/functions/user/getHandler.getHandler
+      Runtime: nodejs18.x
+      CodeUri: . 
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref UserTable
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref UserTable
+      Events:
+        GetUser:
+          Type: Api
+          Properties:
+            Path: /users/{id}
+            Method: GET
+          RestApiId: !Ref ApiGateway
+
+  CreateUserFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: ./dist/functions/user/createHandler.handler 
+      Runtime: nodejs18.x
+      CodeUri: .
+      Timeout: 10 
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref UserTable
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref UserTable
+      Events:
+        CreateUser:
+          Type: Api
+          Properties:
+            Path: /users
+            Method: POST
+            RestApiId: !Ref ApiGateway
+
+
+  ApiGateway:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: Prod
+      Auth: # Desabilita autenticação
+        DefaultAuthorizer: NONE
+        Authorizers: {}
+
+Outputs:
+  ApiEndpoint:
+    Description: URL do endpoint da API
+    Value: !Sub "https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/Prod"
+  UserTableName:
+    Description: Nome da tabela DynamoDB
+    Value: !Ref UserTable
